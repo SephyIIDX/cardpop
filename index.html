@@ -19,12 +19,20 @@
     <script type="application/ld+json">
       {"@context":"https://schema.org","@type":"WebSite","description":"Calculates what cards you will get from card pop in Pokémon Card GB 2: GR-dan Sanjou! (ポケモンカードGB2 GR団参上！)","headline":"cardpop","name":"cardpop","url":"https://sephyiidx.github.io/cardpop/"}
     </script>
+    <script src="js/cardpop.js" defer></script>
   </head>
 
   <body>
     <div>
       <h1 id="cardpop">Cardpop</h1>
       <p>Calculates what cards you will get from card pop in Pokémon Card GB 2: GR-dan Sanjou! (ポケモンカードGB2 GR団参上！)</p>
+    </div>
+    <div>
+        <input id="input" type="file" accept=".sav" />
+    </div>
+    <div>
+        <label for="playerID">PlayerID:</label>
+        <output id="playerID"></output>
     </div>
   </body>
 </html>
