@@ -1,5 +1,6 @@
 
-document.getElementById("input").addEventListener("change", handleFiles, false);
+document.getElementById("input1").addEventListener("change", handleFiles, false);
+document.getElementById("input2").addEventListener("change", handleFiles, false);
 
 function handleFiles(event) {
     const file = event.target.files[0];
@@ -9,6 +10,7 @@ function handleFiles(event) {
         return;
     }
 
+    const playerNumber = this.getAttribute("player");
     const reader = new FileReader();
 
     reader.onload = (event) => {
@@ -16,7 +18,7 @@ function handleFiles(event) {
         const byteArray = new Uint8Array(arrayBuffer);
         const playerID = byteArray.slice(0x10,0x20);
         //console.log(playerID);
-        document.getElementById("playerID").textContent = playerID.toHex();
+        document.getElementById(playerNumber+"id").textContent = playerID.toHex();
     };
 
     reader.readAsArrayBuffer(file);

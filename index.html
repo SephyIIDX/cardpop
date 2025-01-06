@@ -28,11 +28,20 @@
       <p>Calculates what cards you will get from card pop in Pokémon Card GB 2: GR-dan Sanjou! (ポケモンカードGB2 GR団参上！)</p>
     </div>
     <div>
-        <input id="input" type="file" accept=".sav" />
+      <label for="input1">Player1 Savefile:</label>
+      <input id="input1" player="p1" type="file" accept=".sav" />
     </div>
     <div>
-        <label for="playerID">PlayerID:</label>
-        <output id="playerID"></output>
+      <label for="input2">Player2 Savefile:</label>
+      <input id="input2" player="p2" type="file" accept=".sav" />
+    </div>
+    <div>
+      <label for="p1id">Player1 ID:</label>
+      <output id="p1id"></output>
+    </div>
+    <div>
+      <label for="p2id">Player2 ID:</label>
+      <output id="p2id"></output>
     </div>
   </body>
 </html>
