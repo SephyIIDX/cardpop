@@ -2,6 +2,9 @@
 document.getElementById("input1").addEventListener("change", handleFiles, false);
 document.getElementById("input2").addEventListener("change", handleFiles, false);
 
+let p1bytes;
+let p2bytes;
+
 function handleFiles(event) {
     const file = event.target.files[0];
 
@@ -17,13 +20,167 @@ function handleFiles(event) {
         const saveFile = event.target.result;
         const saveFileBytes = new Uint8Array(saveFile);
         const playerBytes = saveFileBytes.slice(0x10,0x20);
+        if(playerNumber === "p1")
+            p1bytes = playerBytes
+        else
+            p2bytes = playerBytes
+
         const playerNameBytes = playerBytes.slice(0,13);
         const name = bytesToString(playerNameBytes);
         document.getElementById(playerNumber+"id").textContent = playerBytes.toHex();
         document.getElementById(playerNumber+"name").textContent = name;
+
+        if ((p1bytes != null) && (p2bytes != null)) {
+            document.getElementById("p1card").textContent = calculateCardPop(p1bytes, p2bytes);
+            document.getElementById("p2card").textContent = calculateCardPop(p2bytes, p1bytes);
+        }
     };
 
     reader.readAsArrayBuffer(file);
+}
+
+// Phantom cards
+const VENUSAUR_LV64 = 0x12;
+const MEW_LV15 = 0x141;
+const LUGIA = 0x188;
+const HERE_COMES_TEAM_ROCKET = 0x1BC;
+
+// Card rarity
+const CIRCLE = 0x0;
+const DIAMOND = 0x1;
+const STAR = 0x2;
+const PHANTOM = 0xfe;
+
+// Card sets
+const BEGINNING_POKEMON = 0;
+const LEGENDARY_POWER = 1;
+const ISLAND_OF_FOSSIL = 2;
+const PSYCHIC_BATTLE = 3;
+const SKY_FLYING_POKEMON = 4;
+const WE_ARE_TEAM_ROCKET = 5;
+const TEAM_ROCKETS_AMBITION = 6;
+const PROMOTIONAL = 7;
+
+// IR type
+const IRPARAM_CARD_POP = 1;
+const IRPARAM_SEND_CARDS = 2;
+const IRPARAM_SEND_DECK = 3;
+const IRPARAM_RARE_CARD_POP = 4;
+
+// wram
+let wCardPopType = IRPARAM_CARD_POP;
+let wRNG1 = 0;
+let wRNG2 = 0;
+let wRNGCounter = 0;
+
+function hashName(nameBuffer) {
+    let d = 0x0;
+    let e = 0x0;
+    for (let byte of nameBuffer) {
+        e += byte;
+        e &= 0xff;
+        d ^= byte;
+    }
+    return [d, e];
+}
+
+function setRng(b, c, d, e) {
+    d = wRNG1 = b - d;
+    e = wRNG2 = c - e;
+    wRNGCounter = e + d;
+
+    wRNG1 &= 0xff;
+    wRNG2 &= 0xff;
+    wRNGCounter &= 0xff;
+
+    return [wRNG1, wRNG2, wRNGCounter];
+}
+
+function rotateLeft(n, d) {
+    return ((n << d) | (n >> (8 - d))) & 0xff;
+}
+
+function updateRngSources() {
+    let a = wRNG1;
+    let d = wRNG2;
+    let e = a;
+    a = d;
+
+    a = rotateLeft(a, 2);
+    a ^= e;
+    a = a >> 1;
+
+    d ^= e;
+    let tmp = wRNGCounter;
+    tmp ^= e;
+    e = tmp;
+
+    e = (e << 1) & 0xff;
+    d = (d << 1) & 0xff;
+    a = d;
+    a ^= e;
+
+    wRNGCounter += 1;
+    wRNG2 = d;
+    wRNG1 = e;
+    return a;
+}
+
+function random(h) {
+    let l = updateRngSources();
+    let hl = (h * l) & 0xffff;
+    h = hl >> 8;
+    return h;
+}
+
+function getRarity(e, wCardPopType) {
+    if (e === 5) {
+        return PHANTOM;
+    }
+    if (wCardPopType === IRPARAM_RARE_CARD_POP) {
+        return STAR;
+    }
+    if (e < 64) {
+        return STAR;
+    }
+    if (e < 154) {
+        return DIAMOND;
+    }
+    return CIRCLE;
+}
+
+function createCardPopCandidateList(a) {
+    let b = BEGINNING_POKEMON;
+    let c = TEAM_ROCKETS_AMBITION;
+
+    // Uncomment and implement energy_cards() if needed
+    // if (a === 0xff) {
+    //     energy_cards();
+    // }
+
+    if (a === 0xfe) {
+        return ["VENUSAUR_LV64", "MEW_LV15", "HERE_COMES_TEAM_ROCKET", "LUGIA", "VENUSAUR_LV64", "MEW_LV15", "HERE_COMES_TEAM_ROCKET", "LUGIA"];
+    }
+
+    // TODO: Return card list with rarity == a and b <= set <= c
+}
+
+function calculateCardPop(p1NameBuffer, p2NameBuffer) {
+    let [b, c] = hashName(p1NameBuffer);
+    let [d, e] = hashName(p2NameBuffer);
+
+    [wRNG1, wRNG2, wRNGCounter] = setRng(b, c, d, e);
+
+    let rarity = getRarity(wRNG2, wCardPopType);
+
+    if (rarity !== PHANTOM) {
+        return 'not phantom';
+    }
+
+    let wCardPopCandidateList = createCardPopCandidateList(rarity);
+
+    let hl = random(wCardPopCandidateList.length);
+    return wCardPopCandidateList[hl];
 }
 
 function bytesToString(bytes) {
