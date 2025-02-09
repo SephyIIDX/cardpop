@@ -31,8 +31,8 @@ function handleFiles(event) {
         document.getElementById(playerNumber + "name").textContent = name;
 
         if ((p1bytes != null) && (p2bytes != null)) {
-            document.getElementById("p1card").textContent = calculateCardPop(p1bytes, p2bytes);
-            document.getElementById("p2card").textContent = calculateCardPop(p2bytes, p1bytes);
+            document.getElementById("p1card").textContent = calculateCardPop(p1bytes, p2bytes, IRPARAM_CARD_POP);
+            document.getElementById("p2card").textContent = calculateCardPop(p2bytes, p1bytes, IRPARAM_CARD_POP);
         }
     };
 
@@ -999,12 +999,6 @@ const IRPARAM_SEND_CARDS = 2;
 const IRPARAM_SEND_DECK = 3;
 const IRPARAM_RARE_CARD_POP = 4;
 
-// wram
-let wCardPopType = IRPARAM_CARD_POP;
-let wRNG1 = 0;
-let wRNG2 = 0;
-let wRNGCounter = 0;
-
 function hashName(nameBuffer) {
     let d = 0x0;
     let e = 0x0;
@@ -1017,14 +1011,9 @@ function hashName(nameBuffer) {
 }
 
 function setRng(b, c, d, e) {
-    d = wRNG1 = b - d;
-    e = wRNG2 = c - e;
-    wRNGCounter = e + d;
-
-    wRNG1 &= 0xff;
-    wRNG2 &= 0xff;
-    wRNGCounter &= 0xff;
-
+    let wRNG1 = (b - d) & 0xff;
+    let wRNG2 = (c - e) & 0xff;
+    let wRNGCounter = (wRNG2 + wRNG1) & 0xff;
     return [wRNG1, wRNG2, wRNGCounter];
 }
 
@@ -1039,11 +1028,10 @@ function rotateLeftThroughCarry(n, carry) {
     return [n, carry];
 }
 
-function updateRngSources() {
-    let a = wRNG1;
+function updateRngSources(wRNG1, wRNG2, wRNGCounter) {
     let d = wRNG2;
-    let e = a;
-    a = d;
+    let e = wRNG1;
+    let a = d;
 
     a = rotateLeft(a, 2);
     a ^= e;
@@ -1068,8 +1056,8 @@ function updateRngSources() {
     return a;
 }
 
-function random(h) {
-    let l = updateRngSources();
+function random(h, wRNG1, wRNG2, wRNGCounter) {
+    let l = updateRngSources(wRNG1, wRNG2, wRNGCounter);
     let hl = (h * l) & 0xffff;
     h = (hl >>> 8) & 0xff;
     return h;
@@ -1118,21 +1106,17 @@ function createCardPopCandidateList(a, b, c) {
     return wCardPopCandidateList;
 }
 
-function calculateCardPop(p1NameBuffer, p2NameBuffer) {
-    wRNG1 = 0;
-    wRNG2 = 0;
-    wRNGCounter = 0;
-
+function calculateCardPop(p1NameBuffer, p2NameBuffer, wCardPopType) {
     let [b, c] = hashName(p1NameBuffer);
     let [d, e] = hashName(p2NameBuffer);
 
-    [wRNG1, wRNG2, wRNGCounter] = setRng(b, c, d, e);
+    let [wRNG1, wRNG2, wRNGCounter] = setRng(b, c, d, e);
 
     let rarity = getRarity(wRNG2, wCardPopType);
 
     let wCardPopCandidateList = createCardPopCandidateList(rarity, BEGINNING_POKEMON, TEAM_ROCKETS_AMBITION);
 
-    let hl = random(wCardPopCandidateList.length);
+    let hl = random(wCardPopCandidateList.length, wRNG1, wRNG2, wRNGCounter);
     return wCardPopCandidateList[hl];
 }
 
