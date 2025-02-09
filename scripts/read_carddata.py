@@ -1,11 +1,11 @@
 from operator import itemgetter
 
 # Read card data from rom
-card_data_start_offset = 0x5c430
-card_data_end_offset = 0x62a6a
-with open('baserom.gbc','rb') as file:
-    file.seek(card_data_start_offset)
-    card_data_bytes = file.read(card_data_end_offset - card_data_start_offset)
+CARD_DATA_START_OFFSET = 0x5C430
+CARD_DATA_END_OFFSET = 0x62A6A
+with open("baserom.gbc", "rb") as file:
+    file.seek(CARD_DATA_START_OFFSET)
+    card_data_bytes = file.read(CARD_DATA_END_OFFSET - CARD_DATA_START_OFFSET)
 
 # Card data offsets
 CARD_DATA_TYPE = 0x00
@@ -15,7 +15,7 @@ CARD_DATA_ID_LOW = 0x08
 CARD_DATA_ID_HIGH = 0x09
 
 PKMN_CARD_DATA_LENGTH = 0x42
-NON_PKMN_CARD_DATA_LENGTH = 0x10 # Energy or Trainer
+NON_PKMN_CARD_DATA_LENGTH = 0x10  # Energy or Trainer
 
 card_data = []
 
@@ -32,14 +32,22 @@ while len(remaining_bytes) > 0:
     print(card_bytes.hex())
 
     card_id = (card_bytes[CARD_DATA_ID_HIGH] << 8) | card_bytes[CARD_DATA_ID_LOW]
-    card_data.append({'id': card_id, 'rarity': card_bytes[CARD_DATA_RARITY], 'set': card_bytes[CARD_DATA_SET]})
+    card_data.append(
+        {
+            "id": card_id,
+            "rarity": card_bytes[CARD_DATA_RARITY],
+            "set": card_bytes[CARD_DATA_SET],
+        }
+    )
 
-    remaining_bytes = remaining_bytes[len(card_bytes):]
+    remaining_bytes = remaining_bytes[len(card_bytes) :]
 
-card_data.sort(key=itemgetter('id'))
+card_data.sort(key=itemgetter("id"))
 
 # Print card data as javascript list
-print('const cardData = [')
+print("const cardData = [")
 for card in card_data:
-    print(f'\t{{"id": {hex(card['id'])}, "rarity": {hex(card['rarity'])}, "set": {hex(card['set'])}}},')
-print('];')
+    print(
+        f'\t{{ "id": {hex(card['id'])}, "rarity": {hex(card['rarity'])}, "set": {hex(card['set'])} }},'
+    )
+print("];")
