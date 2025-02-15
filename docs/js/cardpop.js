@@ -21,19 +21,20 @@ function handleFiles(event) {
         const saveFileBytes = new Uint8Array(saveFile);
         const playerBytes = saveFileBytes.slice(0x10, 0x20);
         if (playerNumber === "p1")
-            p1bytes = playerBytes
+            p1bytes = playerBytes;
         else
-            p2bytes = playerBytes
+            p2bytes = playerBytes;
 
         const playerNameBytes = playerBytes.slice(0, 13);
         const name = bytesToString(playerNameBytes);
         document.getElementById(playerNumber + "id").textContent = playerBytes.toHex();
         document.getElementById(playerNumber + "name").textContent = name;
 
-        if ((p1bytes != null) && (p2bytes != null)) {
-            document.getElementById("p1card").textContent = calculateCardPop(p1bytes, p2bytes, IRPARAM_CARD_POP);
-            document.getElementById("p2card").textContent = calculateCardPop(p2bytes, p1bytes, IRPARAM_CARD_POP);
-        }
+        if ((p1bytes == null) || (p2bytes == null))
+            return;
+
+        document.getElementById("p1card").textContent = calculateCardPop(p1bytes, p2bytes, IRPARAM_CARD_POP);
+        document.getElementById("p2card").textContent = calculateCardPop(p2bytes, p1bytes, IRPARAM_CARD_POP);
     };
 
     reader.readAsArrayBuffer(file);
