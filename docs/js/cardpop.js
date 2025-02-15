@@ -525,7 +525,7 @@ const cardDataSet = [
     "WE_ARE_TEAM_ROCKET",
     "TEAM_ROCKETS_AMBITION",
     "PROMOTIONAL",
-    "BASIC_ENERGY_CARDS"
+    "BASIC_ENERGY_CARDS",
 ];
 
 const cardNames = [
@@ -974,7 +974,7 @@ const cardNames = [
     "RECYCLE",
     "ROCKETS_SNEAK_ATTACK",
     "HERE_COMES_TEAM_ROCKET",
-    "THE_ROCKETS_TRAP"
+    "THE_ROCKETS_TRAP",
 ];
 
 // Card pop rarity
@@ -982,6 +982,7 @@ const CIRCLE = 0x0;
 const DIAMOND = 0x1;
 const STAR = 0x2;
 const PHANTOM = 0xfe;
+const ENERGY = 0xff;
 
 // Card sets
 const BEGINNING_POKEMON = 0;
@@ -998,6 +999,20 @@ const IRPARAM_CARD_POP = 1;
 const IRPARAM_SEND_CARDS = 2;
 const IRPARAM_SEND_DECK = 3;
 const IRPARAM_RARE_CARD_POP = 4;
+
+const CIRCLE_CARD_LIST = createCardPopCandidateList(CIRCLE, BEGINNING_POKEMON, TEAM_ROCKETS_AMBITION);
+const DIAMOND_CARD_LIST = createCardPopCandidateList(DIAMOND, BEGINNING_POKEMON, TEAM_ROCKETS_AMBITION);
+const STAR_CARD_LIST = createCardPopCandidateList(STAR, BEGINNING_POKEMON, TEAM_ROCKETS_AMBITION);
+const PHANTOM_CARD_LIST = createCardPopCandidateList(PHANTOM, BEGINNING_POKEMON, TEAM_ROCKETS_AMBITION);
+const ENERGY_CARD_LIST = createCardPopCandidateList(ENERGY, BEGINNING_POKEMON, TEAM_ROCKETS_AMBITION);
+
+const cardPopCandidateLists = new Map([
+    [CIRCLE, CIRCLE_CARD_LIST],
+    [DIAMOND, DIAMOND_CARD_LIST],
+    [STAR, STAR_CARD_LIST],
+    [PHANTOM, PHANTOM_CARD_LIST],
+    [ENERGY, ENERGY_CARD_LIST],
+]);
 
 function hashName(nameBuffer) {
     let d = 0x0;
@@ -1064,19 +1079,10 @@ function random(h, wRNG1, wRNG2, wRNGCounter) {
 }
 
 function getRarity(e, wCardPopType) {
-    if (e === 5) {
-        return PHANTOM;
-    }
-    if (wCardPopType === IRPARAM_RARE_CARD_POP) {
-        return STAR;
-    }
-    if (e < 64) {
-        return STAR;
-    }
-    if (e < 154) {
-        return DIAMOND;
-    }
-    return CIRCLE;
+    return e === 5 ? PHANTOM
+         : wCardPopType === IRPARAM_RARE_CARD_POP || e < 64 ? STAR
+         : e < 154 ? DIAMOND
+         : CIRCLE;
 }
 
 function createCardPopCandidateList(a, b, c) {
@@ -1098,7 +1104,7 @@ function createCardPopCandidateList(a, b, c) {
 
     // Otherwise, filter cards by rarity and set
     let wCardPopCandidateList = [];
-    for (card of cardData) {
+    for (const card of cardData) {
         if (card.rarity === a && b <= card.set && card.set <= c) {
             wCardPopCandidateList.push(cardNames[card.id]);
         }
@@ -1107,16 +1113,16 @@ function createCardPopCandidateList(a, b, c) {
 }
 
 function calculateCardPop(p1NameBuffer, p2NameBuffer, wCardPopType) {
-    let [b, c] = hashName(p1NameBuffer);
-    let [d, e] = hashName(p2NameBuffer);
+    const [b, c] = hashName(p1NameBuffer);
+    const [d, e] = hashName(p2NameBuffer);
 
     let [wRNG1, wRNG2, wRNGCounter] = setRng(b, c, d, e);
 
-    let rarity = getRarity(wRNG2, wCardPopType);
+    const rarity = getRarity(wRNG2, wCardPopType);
 
-    let wCardPopCandidateList = createCardPopCandidateList(rarity, BEGINNING_POKEMON, TEAM_ROCKETS_AMBITION);
+    const  wCardPopCandidateList = cardPopCandidateLists.get(rarity);
 
-    let hl = random(wCardPopCandidateList.length, wRNG1, wRNG2, wRNGCounter);
+    const hl = random(wCardPopCandidateList.length, wRNG1, wRNG2, wRNGCounter);
     return wCardPopCandidateList[hl];
 }
 
@@ -1184,7 +1190,7 @@ function bytesToString(bytes) {
         [0x5f, "*"],
         [0x60, "<"],
         [0x61, ">"],
-        [0x62, "="]
+        [0x62, "="],
     ]);
 
     const symbols = new Map([
@@ -1197,7 +1203,7 @@ function bytesToString(bytes) {
         [0x07, "COLORLESS"],
         [0x08, "RAINBOW"],
         [0x11, "Lv"],
-        [0x13, "No"]
+        [0x13, "No"],
     ]);
 
     const hiragana = new Map([
@@ -1298,7 +1304,7 @@ function bytesToString(bytes) {
         [0x6f, "?"],
         [0x70, " "],
         [0x77, "・"],
-        [0x78, "ー"]
+        [0x78, "ー"],
     ]);
 
     const katakana = new Map([
@@ -1383,14 +1389,14 @@ function bytesToString(bytes) {
         [0x5e, "ョ"],
         [0x5f, "ッ"],
         [0x70, " "],
-        [0x78, "ー"]
+        [0x78, "ー"],
     ]);
 
     const charmaps = new Map([
         [0x04, latin],
         [0x05, symbols],
         [0x0e, hiragana],
-        [0x0f, katakana]
+        [0x0f, katakana],
     ]);
 
     let name = "";
