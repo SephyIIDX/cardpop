@@ -977,6 +977,33 @@ const cardNames = [
     "THE_ROCKETS_TRAP",
 ];
 
+function createCardPopCandidateList(a, b, c) {
+    if (a === 0xff) {
+        // Only energy cards
+        return [
+            "GRASS_ENERGY", "FIRE_ENERGY", "WATER_ENERGY", "LIGHTNING_ENERGY", "FIGHTING_ENERGY", "PSYCHIC_ENERGY",
+            "GRASS_ENERGY", "FIRE_ENERGY", "WATER_ENERGY", "LIGHTNING_ENERGY", "FIGHTING_ENERGY", "PSYCHIC_ENERGY"
+        ];
+    }
+
+    if (a === 0xfe) {
+        // Only Phantom cards
+        return [
+            "VENUSAUR_LV64", "MEW_LV15", "HERE_COMES_TEAM_ROCKET", "LUGIA",
+            "VENUSAUR_LV64", "MEW_LV15", "HERE_COMES_TEAM_ROCKET", "LUGIA"
+        ];
+    }
+
+    // Otherwise, filter cards by rarity and set
+    let wCardPopCandidateList = [];
+    for (const card of cardData) {
+        if (card.rarity === a && b <= card.set && card.set <= c) {
+            wCardPopCandidateList.push(cardNames[card.id]);
+        }
+    }
+    return wCardPopCandidateList;
+}
+
 // Card pop rarity
 const CIRCLE = 0x0;
 const DIAMOND = 0x1;
@@ -1017,7 +1044,7 @@ const cardPopCandidateLists = new Map([
 function hashName(nameBuffer) {
     let d = 0x0;
     let e = 0x0;
-    for (let byte of nameBuffer) {
+    for (const byte of nameBuffer) {
         e += byte;
         e &= 0xff;
         d ^= byte;
@@ -1026,9 +1053,9 @@ function hashName(nameBuffer) {
 }
 
 function setRng(b, c, d, e) {
-    let wRNG1 = (b - d) & 0xff;
-    let wRNG2 = (c - e) & 0xff;
-    let wRNGCounter = (wRNG2 + wRNG1) & 0xff;
+    const wRNG1 = (b - d) & 0xff;
+    const wRNG2 = (c - e) & 0xff;
+    const wRNGCounter = (wRNG2 + wRNG1) & 0xff;
     return [wRNG1, wRNG2, wRNGCounter];
 }
 
@@ -1068,14 +1095,16 @@ function updateRngSources(wRNG1, wRNG2, wRNGCounter) {
     wRNGCounter &= 0xff;
     wRNG2 = d;
     wRNG1 = e;
-    return a;
+    return [a, wRNG1, wRNG2, wRNGCounter];
 }
 
 function random(h, wRNG1, wRNG2, wRNGCounter) {
-    let l = updateRngSources(wRNG1, wRNG2, wRNGCounter);
-    let hl = (h * l) & 0xffff;
+    let l;
+    [l, wRNG1, wRNG2, wRNGCounter] = updateRngSources(wRNG1, wRNG2, wRNGCounter);
+
+    const hl = (h * l) & 0xffff;
     h = (hl >>> 8) & 0xff;
-    return h;
+    return [h, wRNG1, wRNG2, wRNGCounter];
 }
 
 function getRarity(e, wCardPopType) {
@@ -1083,33 +1112,6 @@ function getRarity(e, wCardPopType) {
          : wCardPopType === IRPARAM_RARE_CARD_POP || e < 64 ? STAR
          : e < 154 ? DIAMOND
          : CIRCLE;
-}
-
-function createCardPopCandidateList(a, b, c) {
-    if (a === 0xff) {
-        // Only energy cards
-        return [
-            "GRASS_ENERGY", "FIRE_ENERGY", "WATER_ENERGY", "LIGHTNING_ENERGY", "FIGHTING_ENERGY", "PSYCHIC_ENERGY",
-            "GRASS_ENERGY", "FIRE_ENERGY", "WATER_ENERGY", "LIGHTNING_ENERGY", "FIGHTING_ENERGY", "PSYCHIC_ENERGY"
-        ];
-    }
-
-    if (a === 0xfe) {
-        // Only Phantom cards
-        return [
-            "VENUSAUR_LV64", "MEW_LV15", "HERE_COMES_TEAM_ROCKET", "LUGIA",
-            "VENUSAUR_LV64", "MEW_LV15", "HERE_COMES_TEAM_ROCKET", "LUGIA"
-        ];
-    }
-
-    // Otherwise, filter cards by rarity and set
-    let wCardPopCandidateList = [];
-    for (const card of cardData) {
-        if (card.rarity === a && b <= card.set && card.set <= c) {
-            wCardPopCandidateList.push(cardNames[card.id]);
-        }
-    }
-    return wCardPopCandidateList;
 }
 
 function calculateCardPop(p1NameBuffer, p2NameBuffer, wCardPopType) {
@@ -1122,7 +1124,7 @@ function calculateCardPop(p1NameBuffer, p2NameBuffer, wCardPopType) {
 
     const  wCardPopCandidateList = cardPopCandidateLists.get(rarity);
 
-    const hl = random(wCardPopCandidateList.length, wRNG1, wRNG2, wRNGCounter);
+    const [hl] = random(wCardPopCandidateList.length, wRNG1, wRNG2, wRNGCounter);
     return wCardPopCandidateList[hl];
 }
 
